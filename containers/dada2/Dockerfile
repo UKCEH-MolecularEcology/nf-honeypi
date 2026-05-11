@@ -1,11 +1,10 @@
-FROM rocker/r-ver:4.3.3
+FROM bioconductor/bioconductor_docker:RELEASE_3_18
 
 LABEL org.opencontainers.image.source="https://github.com/UKCEH-MolecularEcology/nf-honeypi"
-LABEL org.opencontainers.image.description="R 4.3.3 + DADA2 for nf-honeypi"
+LABEL org.opencontainers.image.description="R 4.3 + DADA2 1.30 for nf-honeypi"
 LABEL org.opencontainers.image.licenses="MIT"
 
 RUN Rscript -e " \
-    install.packages('BiocManager', repos='https://cloud.r-project.org', quiet=TRUE); \
-    BiocManager::install('dada2', ask=FALSE, update=FALSE, version='3.18', quiet=TRUE); \
-    if (!requireNamespace('dada2', quietly=TRUE)) stop('dada2 failed to install'); \
+    BiocManager::install('dada2', ask=FALSE, update=FALSE); \
+    stopifnot(requireNamespace('dada2', quietly=TRUE)); \
     cat('dada2 version:', as.character(packageVersion('dada2')), '\n')"

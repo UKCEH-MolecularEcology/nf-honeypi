@@ -2,7 +2,7 @@ process DADA2 {
     tag "dada2"
     label 'process_high'
 
-    container 'ghcr.io/ukceh-molecularecology/nf-honeypi/dada2:r4.3.3'
+    container 'quay.io/biocontainers/bioconductor-dada2:1.30.0--r43hf17093f_0'
 
     publishDir "${params.outdir}/dada2", mode: 'copy'
 
