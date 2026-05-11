@@ -32,7 +32,7 @@ process ITSX {
         --cpu ${task.cpus} \\
         --graphical F \\
         --save_regions ${its_region} \\
-        --partial 50
+        --partial 50 || true
 
     # Collect the extracted region
     ITS_FILE="itsx_out.${its_region}.fasta"

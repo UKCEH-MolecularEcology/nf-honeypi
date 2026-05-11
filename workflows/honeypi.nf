@@ -17,25 +17,14 @@ workflow HONEYPI {
 
     // ── Database ─────────────────────────────────────────────────────────
     if (params.rdp_db_dir) {
-        def db_url = (params.its_region == 'ITS1') ? params.rdp_db_its1_url : params.rdp_db_its2_url
-        ch_db = Channel.value([file(params.rdp_db_dir), db_url])
-        ch_db_props = ch_db.map { dir, url ->
-            def props = dir.listFiles().find { it.name.endsWith('.properties') }
-            if (!props) error "No .properties file found in rdp_db_dir: ${dir}"
-            props
-        }
+        ch_db_dir = Channel.value(file(params.rdp_db_dir))
     } else {
         def db_url = (params.its_region == 'ITS1') ? params.rdp_db_its1_url : params.rdp_db_its2_url
         DOWNLOAD_DB(
             Channel.value(db_url),
             Channel.value(params.its_region)
         )
-        ch_db_props = DOWNLOAD_DB.out.db_dir.map { db_dir ->
-            def props = db_dir.listFiles().find { it.name.endsWith('.properties') }
-            if (!props) error "No .properties file found in downloaded db dir: ${db_dir}"
-            props
-        }
-        // versions.yml written inside db_dir by DOWNLOAD_DB
+        ch_db_dir = DOWNLOAD_DB.out.db_dir
     }
 
     // ── Per-sample trimming ───────────────────────────────────────────────
@@ -65,7 +54,7 @@ workflow HONEYPI {
     // ── RDP classification ────────────────────────────────────────────────
     RDP_CLASSIFIER(
         CONSOLIDATE.out.fasta,
-        ch_db_props,
+        ch_db_dir,
         params.rdp_confidence
     )
     ch_versions = ch_versions.mix(RDP_CLASSIFIER.out.versions)

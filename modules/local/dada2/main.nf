@@ -36,7 +36,7 @@ process DADA2 {
     if (length(fnFs) != length(fnRs))
         stop(paste("R1/R2 count mismatch:", length(fnFs), "vs", length(fnRs)))
 
-    sample_names <- sub("_R1_val_1\\.fq\\.gz\$", "", basename(fnFs))
+    sample_names <- sub("_R1_val_1[.]fq[.]gz\$", "", basename(fnFs))
     message("Processing ", length(sample_names), " samples: ",
             paste(head(sample_names, 5), collapse=", "),
             if (length(sample_names) > 5) "..." else "")
