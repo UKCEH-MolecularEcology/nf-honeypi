@@ -1,0 +1,34 @@
+name: Build and push containers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'containers/**'
+  workflow_dispatch:
+
+jobs:
+  build-dada2:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push dada2 container
+        uses: docker/build-push-action@v5
+        with:
+          context: containers/dada2
+          push: true
+          tags: |
+            ghcr.io/ukceh-molecularecology/nf-honeypi/dada2:r4.3.3
+            ghcr.io/ukceh-molecularecology/nf-honeypi/dada2:latest

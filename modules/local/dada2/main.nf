@@ -2,7 +2,7 @@ process DADA2 {
     tag "dada2"
     label 'process_high'
 
-    container 'ghcr.io/ukceh-molecularecology/nf-edna-pipeline/ecology:r4.3.3'
+    container 'ghcr.io/ukceh-molecularecology/nf-honeypi/dada2:r4.3.3'
 
     publishDir "${params.outdir}/dada2", mode: 'copy'
 
@@ -21,32 +21,6 @@ process DADA2 {
     """
     #!/usr/bin/env Rscript
 
-    r_lib <- "${params.r_lib_cache}"
-    dir.create(r_lib, showWarnings=FALSE, recursive=TRUE)
-    .libPaths(c(r_lib, .libPaths()))
-
-    .install_pkg <- function(pkg, bioc=FALSE) {
-        if (requireNamespace(pkg, quietly=TRUE)) return(invisible(NULL))
-        if (bioc) {
-            if (!requireNamespace("BiocManager", quietly=TRUE))
-                install.packages("BiocManager", quiet=TRUE,
-                    repos="https://cloud.r-project.org")
-            BiocManager::install(pkg, ask=FALSE, update=FALSE, quiet=TRUE)
-        } else {
-            install.packages(pkg, quiet=TRUE, repos="https://cloud.r-project.org")
-        }
-    }
-
-    r_ver    <- numeric_version(paste(R.version\$major, R.version\$minor, sep="."))
-    bioc_ver <- if (r_ver >= "4.5") "3.22" else if (r_ver >= "4.4") "3.20" else if (r_ver >= "4.3") "3.18" else "3.16"
-    options(repos = c(
-        BioCsoft = paste0("https://bioconductor.org/packages/", bioc_ver, "/bioc"),
-        BioCann  = paste0("https://bioconductor.org/packages/", bioc_ver, "/data/annotation"),
-        CRAN     = "https://cloud.r-project.org"
-    ))
-
-    .install_pkg("BiocManager")
-    .install_pkg("dada2", bioc=TRUE)
     suppressPackageStartupMessages(library(dada2))
 
     trunc_r1  <- as.integer("${params.dada2_trunc_len_r1}")
