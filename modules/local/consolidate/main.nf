@@ -66,4 +66,10 @@ process CONSOLIDATE {
         fh.write('"CONSOLIDATE":\\n')
         fh.write(f'    python: {platform.python_version()}\\n')
     """
+
+    stub:
+    """
+    printf '>ASV_0000000001\nACGTACGTACGTACGT\n>ASV_0000000002\nTGCATGCATGCATGCA\n' > ASVs.fasta
+    printf '"CONSOLIDATE":\n    python: 3.10\n' > versions.yml
+    """
 }

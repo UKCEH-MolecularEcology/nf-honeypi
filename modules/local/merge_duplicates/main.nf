@@ -66,4 +66,10 @@ process MERGE_DUPLICATES {
         fh.write('"MERGE_DUPLICATES":\\n')
         fh.write(f'    python: {platform.python_version()}\\n')
     """
+
+    stub:
+    """
+    printf 'taxonomy\tsample-A\tsample-B\nk__Viridiplantae;p__Magnoliophyta;c__Liliopsida;o__Poales;f__Poaceae;g__Hordeum\t100\t80\nk__unclassified\t50\t120\n' > ASVs_counts_merged.txt
+    printf '"MERGE_DUPLICATES":\n    python: 3.10\n' > versions.yml
+    """
 }

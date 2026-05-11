@@ -30,8 +30,12 @@ workflow HONEYPI {
             Channel.value(db_url),
             Channel.value(params.its_region)
         )
-        ch_db_props = DOWNLOAD_DB.out.properties
-        ch_versions = ch_versions.mix(DOWNLOAD_DB.out.versions)
+        ch_db_props = DOWNLOAD_DB.out.db_dir.map { db_dir ->
+            def props = db_dir.listFiles().find { it.name.endsWith('.properties') }
+            if (!props) error "No .properties file found in downloaded db dir: ${db_dir}"
+            props
+        }
+        // versions.yml written inside db_dir by DOWNLOAD_DB
     }
 
     // ── Per-sample trimming ───────────────────────────────────────────────

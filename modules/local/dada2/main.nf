@@ -179,4 +179,12 @@ process DADA2 {
         paste0('    R: ', R.version\$major, '.', R.version\$minor)
     ), "versions.yml")
     """
+
+    stub:
+    """
+    printf '>ASV_0000000001\nACGTACGTACGTACGT\n>ASV_0000000002\nTGCATGCATGCATGCA\n' > ASVs.fasta
+    printf 'ASV_ID\tsample-A\tsample-B\nASV_0000000001\t100\t80\nASV_0000000002\t50\t120\n' > ASVs_dada2_counts.txt
+    printf 'step\treads\ninput\t10000\nfiltered\t9000\nnon_chimeric\t8500\n' > dada2_stats.txt
+    printf '"DADA2":\n    dada2: 1.28.0\n    R: 4.3.3\n' > versions.yml
+    """
 }

@@ -88,4 +88,11 @@ PYEOF
         awk '{print "\\"ITSX\\":\\n    ITSx: " \$1}' > versions.yml || \\
         printf '"ITSX":\\n    ITSx: 1.1.3\\n' > versions.yml
     """
+
+    stub:
+    """
+    printf '>ASV_0000000001\nACGTACGT\n' > ASVs_ITSxed.fasta
+    touch itsx_out.summary.txt
+    printf '"ITSX":\n    ITSx: 1.1.3\n' > versions.yml
+    """
 }

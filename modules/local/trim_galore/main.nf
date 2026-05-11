@@ -43,4 +43,11 @@ process TRIM_GALORE {
     trim_galore --version | grep 'Trim Galore' | sed 's/Trim Galore version //' | \\
         awk '{print "\\"TRIM_GALORE\\":\\n    trim_galore: " \$1}' > versions.yml
     """
+
+    stub:
+    """
+    touch "${meta.id}_R1_val_1.fq.gz" "${meta.id}_R2_val_2.fq.gz"
+    touch "${meta.id}_trim_stats.txt"
+    printf '"TRIM_GALORE":\n    trim_galore: 0.6.10\n' > versions.yml
+    """
 }

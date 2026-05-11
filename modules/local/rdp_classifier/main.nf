@@ -104,4 +104,11 @@ PYEOF
         awk '{print "\\"RDP_CLASSIFIER\\":\\n    rdptools: " \$NF}' > versions.yml || \\
         printf '"RDP_CLASSIFIER":\\n    rdptools: 2.0.2\\n' > versions.yml
     """
+
+    stub:
+    """
+    printf 'ASV_0000000001\t+\troot\trootrank\t1.0\tViridiplantae\tdomain\t0.99\tMagnoliophyta\tphylum\t0.95\tLiliopsida\tclass\t0.80\tPoales\torder\t0.75\tPoaceae\tfamily\t0.70\tHordeum\tgenus\t0.65\n' > assigned_taxonomy_prelim.txt
+    printf 'ASV_ID\ttaxonomy\tconfidence\nASV_0000000001\tk__Viridiplantae;p__Magnoliophyta;c__Liliopsida;o__Poales;f__Poaceae;g__Hordeum\t0.65\nASV_0000000002\tk__unclassified\t1.0\n' > ASVs_taxonomy.txt
+    printf '"RDP_CLASSIFIER":\n    rdptools: 2.0.2\n' > versions.yml
+    """
 }

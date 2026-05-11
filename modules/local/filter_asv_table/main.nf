@@ -48,4 +48,10 @@ process FILTER_ASV_TABLE {
         fh.write('"FILTER_ASV_TABLE":\\n')
         fh.write(f'    python: {platform.python_version()}\\n')
     """
+
+    stub:
+    """
+    printf 'ASV_ID\tsample-A\tsample-B\nASV_0000000001\t100\t80\nASV_0000000002\t50\t120\n' > ASVs_counts_filtered.txt
+    printf '"FILTER_ASV_TABLE":\n    python: 3.10\n' > versions.yml
+    """
 }

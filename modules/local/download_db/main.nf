@@ -11,9 +11,7 @@ process DOWNLOAD_DB {
     val its_region
 
     output:
-    path "rdp_db_${its_region}/",          emit: db_dir
-    path "rdp_db_${its_region}/*.properties", emit: properties
-    path 'versions.yml',                   emit: versions
+    path "rdp_db_${its_region}/", emit: db_dir
 
     script:
     """
@@ -22,11 +20,12 @@ process DOWNLOAD_DB {
     import tarfile
     import os
     import sys
+    import platform
 
-    url       = "${db_url}"
-    region    = "${its_region}"
-    out_dir   = f"rdp_db_{region}"
-    archive   = f"rdp_db_{region}.tar.gz"
+    url     = "${db_url}"
+    region  = "${its_region}"
+    out_dir = f"rdp_db_{region}"
+    archive = f"rdp_db_{region}.tar.gz"
 
     print(f"Downloading RDP training data for {region} from:", url, flush=True)
 
@@ -45,28 +44,30 @@ process DOWNLOAD_DB {
     with tarfile.open(archive) as tf:
         tf.extractall(".")
 
-    # Locate extracted directory and rename to standardised name
     extracted = [d for d in os.listdir(".") if os.path.isdir(d) and d != out_dir]
     if not extracted:
         sys.exit("Extraction produced no directories.")
     if len(extracted) > 1:
-        # Pick the most likely candidate (longest name with 'rdp' or 'Gweon' or 'train')
         extracted.sort(key=lambda d: (
             any(k in d.lower() for k in ('gweon', 'rdp', 'train')), len(d)
         ), reverse=True)
     os.rename(extracted[0], out_dir)
     os.remove(archive)
 
-    # Verify a .properties file exists
     props = [f for f in os.listdir(out_dir) if f.endswith('.properties')]
     if not props:
         sys.exit(f"No .properties file found in {out_dir}. Check archive contents.")
     print(f"Database ready: {out_dir}/{props[0]}", flush=True)
 
-    import platform
-    with open("versions.yml", "w") as fh:
+    with open(os.path.join(out_dir, "versions.yml"), "w") as fh:
         fh.write('"DOWNLOAD_DB":\\n')
         fh.write(f'    python: {platform.python_version()}\\n')
         fh.write(f'    database_url: {url}\\n')
+    """
+
+    stub:
+    """
+    mkdir -p "rdp_db_${its_region}"
+    touch "rdp_db_${its_region}/Gweon-${its_region}.properties"
     """
 }
