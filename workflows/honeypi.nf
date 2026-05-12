@@ -6,6 +6,7 @@ include { CONSOLIDATE       } from '../modules/local/consolidate/main'
 include { RDP_CLASSIFIER    } from '../modules/local/rdp_classifier/main'
 include { FILTER_ASV_TABLE  } from '../modules/local/filter_asv_table/main'
 include { MERGE_DUPLICATES  } from '../modules/local/merge_duplicates/main'
+include { SUMMARY           } from '../modules/local/summary/main'
 
 workflow HONEYPI {
 
@@ -72,6 +73,17 @@ workflow HONEYPI {
         RDP_CLASSIFIER.out.taxonomy
     )
     ch_versions = ch_versions.mix(MERGE_DUPLICATES.out.versions)
+
+    // ── Consolidated honeypi_output folder ───────────────────────────────
+    ch_error_rates = DADA2.out.error_plots.ifEmpty(file("${projectDir}/assets/NO_FILE"))
+    SUMMARY(
+        CONSOLIDATE.out.fasta,
+        MERGE_DUPLICATES.out.counts,
+        FILTER_ASV_TABLE.out.counts,
+        RDP_CLASSIFIER.out.taxonomy,
+        DADA2.out.stats,
+        ch_error_rates
+    )
 
     emit:
     asvs          = CONSOLIDATE.out.fasta

@@ -2,6 +2,7 @@ BEGIN {
     FS = "\t"
     prefix["domain"]       = "k__"
     prefix["superkingdom"] = "k__"
+    prefix["kingdom"]      = "k__"
     prefix["phylum"]       = "p__"
     prefix["class"]        = "c__"
     prefix["order"]        = "o__"
@@ -19,7 +20,9 @@ NF < 3 { next }
     gsub(/^[[:space:]]+|[[:space:]]+$/, "", seq_id)
     if (seq_id == "") next
     n_total++
-    start = ($2 == "+" || $2 == "-") ? 3 : 2
+    # Field 2 is always the orientation field ('+', '-', or empty).
+    # Triplets (name, rank, conf) always start at field 3.
+    start = 3
     taxonomy = ""; last_conf = 1.0
     for (i = start; i + 2 <= NF; i += 3) {
         name = $i; rank = $(i+1); conf = $(i+2) + 0
