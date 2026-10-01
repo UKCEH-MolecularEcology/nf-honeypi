@@ -26,13 +26,11 @@ process ITSX {
     ITSx \\
         -i "${asvs_fasta}" \\
         -o itsx_out \\
-        --taxa all \\
         --complement T \\
-        -t ${its_region} \\
         --cpu ${task.cpus} \\
         --graphical F \\
         --save_regions ${its_region} \\
-        --partial 50 || true
+        --partial 50
 
     # Collect the extracted region
     ITS_FILE="itsx_out.${its_region}.fasta"
@@ -40,43 +38,20 @@ process ITSX {
         echo "WARNING: ITSx produced no ${its_region} sequences. Creating empty file."
         touch ASVs_ITSxed.fasta
     else
-        # Length filter using Python (replaces vsearch)
-        python3 << 'PYEOF'
-import sys
-
-min_len = ${its_min_len}
-max_len = ${its_max_len}
-its_file = "itsx_out.${its_region}.fasta"
-
-kept = 0
-removed = 0
-current_hdr = None
-current_seq  = []
-
-def write_record(out, hdr, seq):
-    global kept, removed
-    s = ''.join(seq)
-    if min_len <= len(s) <= max_len:
-        out.write(hdr + '\\n' + s + '\\n')
-        kept += 1
-    else:
-        removed += 1
-
-with open(its_file) as fin, open('ASVs_ITSxed.fasta', 'w') as fout:
-    for line in fin:
-        line = line.rstrip()
-        if line.startswith('>'):
-            if current_hdr is not None:
-                write_record(fout, current_hdr, current_seq)
-            current_hdr = line
-            current_seq  = []
-        else:
-            current_seq.append(line)
-    if current_hdr is not None:
-        write_record(fout, current_hdr, current_seq)
-
-print(f"Length filter ({min_len}-{max_len} bp): kept {kept}, removed {removed}", flush=True)
-PYEOF
+        # Length filter using awk (replaces vsearch; the ITSx container has no python)
+        awk -v min=${its_min_len} -v max=${its_max_len} '
+            function flush() {
+                if (hdr != "") {
+                    if (length(seq) >= min && length(seq) <= max) { print hdr; print seq; kept++ }
+                    else removed++
+                }
+            }
+            /^>/ { flush(); hdr = \$0; seq = ""; next }
+            { seq = seq \$0 }
+            END {
+                flush()
+                printf "Length filter (%d-%d bp): kept %d, removed %d\\n", min, max, kept+0, removed+0 > "/dev/stderr"
+            }' "itsx_out.${its_region}.fasta" > ASVs_ITSxed.fasta
     fi
 
     n_out=\$(grep -c '^>' ASVs_ITSxed.fasta 2>/dev/null || echo 0)

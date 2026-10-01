@@ -6,70 +6,41 @@ process MERGE_DUPLICATES {
 
     publishDir "${params.outdir}/counts", mode: 'copy'
 
+    // Inputs are staged under distinct names: the outputs below are called ASVs.fasta /
+    // ASVs_taxonomy.txt, and writing them must not overwrite an upstream file through a symlink.
     input:
-    path counts_txt    // ASVs_counts_filtered.txt
-    path taxonomy_txt  // ASVs_taxonomy.txt
+    path counts_txt,    stageAs: 'in_counts_filtered.txt'    // ASVs_counts_filtered.txt
+    path asvs_fasta,    stageAs: 'in_consolidated.fasta'     // consolidated ASVs.fasta
+    path taxonomy_txt,  stageAs: 'in_rdp_taxonomy.txt'       // native-format taxonomy (no header)
+    path sample_ids,    stageAs: 'in_sample_ids.txt'         // original sample IDs, one per line
 
     output:
-    path 'ASVs_counts_merged.txt', emit: counts
+    path 'ASVs_counts.txt',        emit: counts          // native honeypi final table
+    path 'ASVs_taxonomy.txt',      emit: taxonomy        // native honeypi final taxonomy
+    path 'ASVs.fasta',             emit: fasta           // native honeypi final FASTA
+    path 'ASVs_counts_merged.txt', emit: counts_by_taxon // extra: counts per identical taxonomy
     path 'versions.yml',           emit: versions
 
     script:
     """
-    #!/usr/bin/env python3
-    import platform
-    from collections import defaultdict
+    # Native honeypi (honeypi_mergeDuplicateASV): merge ASVs with identical sequences
+    python3 "${projectDir}/bin/merge_duplicate_asvs.py" \\
+        --fasta    in_consolidated.fasta \\
+        --counts   in_counts_filtered.txt \\
+        --taxonomy in_rdp_taxonomy.txt \\
+        --sample-ids in_sample_ids.txt \\
+        --strip-sample-regex='${params.sample_strip_regex}' \\
+        --outdir .
 
-    # Load taxonomy: ASV_ID -> taxonomy_string
-    tax_map = {}
-    with open("${taxonomy_txt}") as fh:
-        header = fh.readline()  # skip header
-        for line in fh:
-            parts = line.rstrip('\\n').split('\\t')
-            if len(parts) >= 2:
-                tax_map[parts[0]] = parts[1]
-
-    # Load count table
-    samples    = None
-    tax_counts = defaultdict(lambda: None)
-
-    with open("${counts_txt}") as fh:
-        col_header = fh.readline().rstrip('\\n').split('\\t')
-        # First column is ASV_ID, rest are sample names
-        samples = col_header[1:]
-
-        for line in fh:
-            parts  = line.rstrip('\\n').split('\\t')
-            asv_id = parts[0]
-            counts = [int(x) if x.isdigit() else 0 for x in parts[1:]]
-
-            taxonomy = tax_map.get(asv_id, 'k__unclassified')
-            if tax_counts[taxonomy] is None:
-                tax_counts[taxonomy] = [0] * len(samples)
-            for i, c in enumerate(counts):
-                tax_counts[taxonomy][i] += c
-
-    # Write merged table sorted by total abundance (descending)
-    rows = [(t, c) for t, c in tax_counts.items() if c is not None]
-    rows.sort(key=lambda x: -sum(x[1]))
-
-    with open('ASVs_counts_merged.txt', 'w') as fout:
-        fout.write('\\t'.join(['taxonomy'] + samples) + '\\n')
-        for taxonomy, counts in rows:
-            fout.write('\\t'.join([taxonomy] + [str(c) for c in counts]) + '\\n')
-
-    n_input  = len(tax_counts)
-    n_unique = len(rows)
-    print(f"Merged {n_input} taxa groups -> {n_unique} unique taxonomy entries", flush=True)
-
-    with open('versions.yml', 'w') as fh:
-        fh.write('"MERGE_DUPLICATES":\\n')
-        fh.write(f'    python: {platform.python_version()}\\n')
+    python3 -c "import platform; print('\\"MERGE_DUPLICATES\\":\\n    python: ' + platform.python_version())" > versions.yml
     """
 
     stub:
     """
-    printf 'taxonomy\tsample-A\tsample-B\nk__Viridiplantae;p__Magnoliophyta;c__Liliopsida;o__Poales;f__Poaceae;g__Hordeum\t100\t80\nk__unclassified\t50\t120\n' > ASVs_counts_merged.txt
-    printf '"MERGE_DUPLICATES":\n    python: 3.10\n' > versions.yml
+    printf 'sample-A\\tsample-B\nASV_0000000001\\t100\\t80\nASV_0000000002\\t50\\t120\n' > ASVs_counts.txt
+    printf 'ASV_0000000001\\tk__Viridiplantae; p__Streptophyta; c__Liliopsida; o__Poales; f__Poaceae; g__Hordeum\\t0.65\nASV_0000000002\\tUnassignable\\t1.0\n' > ASVs_taxonomy.txt
+    printf '>ASV_0000000001\nACGTACGT\n>ASV_0000000002\nTGCATGCA\n' > ASVs.fasta
+    printf 'taxonomy\\tsample-A\\tsample-B\nUnassignable\\t150\\t200\n' > ASVs_counts_merged.txt
+    printf '"MERGE_DUPLICATES":\\n    python: 3.10\\n' > versions.yml
     """
 }
