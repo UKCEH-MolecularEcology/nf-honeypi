@@ -67,29 +67,36 @@ workflow HONEYPI {
     )
     ch_versions = ch_versions.mix(FILTER_ASV_TABLE.out.versions)
 
-    // ── Merge ASVs with identical taxonomy ───────────────────────────────
+    // ── Merge ASVs with identical sequences (native honeypi final step) ──
+    ch_sample_ids = ch_reads
+        .map { meta, r1, r2 -> meta.id }
+        .collectFile(name: 'sample_ids.txt', newLine: true, sort: true)
+
     MERGE_DUPLICATES(
         FILTER_ASV_TABLE.out.counts,
-        RDP_CLASSIFIER.out.taxonomy
+        CONSOLIDATE.out.fasta,
+        RDP_CLASSIFIER.out.taxonomy,
+        ch_sample_ids
     )
     ch_versions = ch_versions.mix(MERGE_DUPLICATES.out.versions)
 
     // ── Consolidated honeypi_output folder ───────────────────────────────
     ch_error_rates = DADA2.out.error_plots.ifEmpty(file("${projectDir}/assets/NO_FILE"))
     SUMMARY(
-        CONSOLIDATE.out.fasta,
+        MERGE_DUPLICATES.out.fasta,
         MERGE_DUPLICATES.out.counts,
+        MERGE_DUPLICATES.out.taxonomy,
+        MERGE_DUPLICATES.out.counts_by_taxon,
         FILTER_ASV_TABLE.out.counts,
-        RDP_CLASSIFIER.out.taxonomy,
         DADA2.out.stats,
         ch_error_rates
     )
 
     emit:
-    asvs          = CONSOLIDATE.out.fasta
-    counts        = FILTER_ASV_TABLE.out.counts
-    taxonomy      = RDP_CLASSIFIER.out.taxonomy
-    merged_counts = MERGE_DUPLICATES.out.counts
+    asvs          = MERGE_DUPLICATES.out.fasta
+    counts        = MERGE_DUPLICATES.out.counts
+    taxonomy      = MERGE_DUPLICATES.out.taxonomy
+    merged_counts = MERGE_DUPLICATES.out.counts_by_taxon
     trim_stats    = TRIM_GALORE.out.stats
     dada2_stats   = DADA2.out.stats
     itsx_summary  = ITSX.out.summary

@@ -7,7 +7,7 @@ process CONSOLIDATE {
     publishDir "${params.outdir}/consolidate", mode: 'copy'
 
     input:
-    path dada2_asvs    // ASVs.fasta from DADA2 (all ASVs)
+    path dada2_asvs, stageAs: 'dada2_ASVs.fasta'   // ASVs.fasta from DADA2 (all ASVs); staged under a different name so writing ASVs.fasta below can't overwrite the DADA2 output through the symlink
     path itsxed_asvs   // ASVs_ITSxed.fasta from ITSX (extracted sequences)
 
     output:
@@ -30,7 +30,8 @@ process CONSOLIDATE {
                 if line.startswith('>'):
                     if hdr is not None:
                         records[hdr] = ''.join(buf)
-                    hdr = line[1:].split()[0]
+                    # ITSx headers look like 'ASV_1|T|ITS2 Extracted ...': keep only the ASV id
+                    hdr = line[1:].split()[0].split('|')[0]
                     buf = []
                     if hdr not in records:
                         order.append(hdr)

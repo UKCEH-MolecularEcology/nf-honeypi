@@ -6,3 +6,5 @@ results/
 test_results/
 *.pyc
 __pycache__/
+results_*/
+*.sif
